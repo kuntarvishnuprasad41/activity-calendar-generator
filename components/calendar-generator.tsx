@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 import { useState } from "react";
 import {
@@ -67,6 +67,14 @@ export default function CalendarGenerator() {
 
   // File input ref
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loadActivitiesFromFile();
+  }, []);
+
+  useEffect(() => {
+    saveActivitiesToFile();
+  }, [activities]);
 
   // Handle adding a new activity
   const handleAddActivity = () => {
@@ -145,9 +153,53 @@ export default function CalendarGenerator() {
   };
 
   // Save activities to a JSON file
-  const saveActivitiesToFile = () => {
+  // const saveActivitiesToFile = () => {
+  //   try {
+  //     // Convert dates to ISO strings for JSON serialization
+  //     const activitiesToSave = activities.map((activity) => ({
+  //       ...activity,
+  //       date:
+  //         activity.date instanceof Date
+  //           ? activity.date.toISOString()
+  //           : activity.date,
+  //     }));
+
+  //     const jsonString = JSON.stringify(activitiesToSave, null, 2);
+  //     const blob = new Blob([jsonString], { type: "application/json" });
+  //     const url = URL.createObjectURL(blob);
+
+  //     // Create a download link and trigger it
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = `aup_school_calendar_${format(
+  //       new Date(),
+  //       "yyyy-MM-dd"
+  //     )}.json`;
+  //     document.body.appendChild(a);
+  //     a.click();
+
+  //     // Clean up
+  //     document.body.removeChild(a);
+  //     URL.revokeObjectURL(url);
+
+  //     toast({
+  //       title: "Calendar saved",
+  //       description: "Your activities have been saved to a JSON file.",
+  //     });
+  //   } catch (error) {
+  //     console.error("Error saving file:", error);
+  //     toast({
+  //       title: "Error saving file",
+  //       description: "There was a problem saving your activities.",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // };
+
+  const saveActivitiesToFile = async () => {
+    console.log("hello");
+
     try {
-      // Convert dates to ISO strings for JSON serialization
       const activitiesToSave = activities.map((activity) => ({
         ...activity,
         date:
@@ -156,89 +208,109 @@ export default function CalendarGenerator() {
             : activity.date,
       }));
 
-      const jsonString = JSON.stringify(activitiesToSave, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      // Create a download link and trigger it
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `aup_school_calendar_${format(
-        new Date(),
-        "yyyy-MM-dd"
-      )}.json`;
-      document.body.appendChild(a);
-      a.click();
-
-      // Clean up
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Calendar saved",
-        description: "Your activities have been saved to a JSON file.",
+      const res = await fetch("/api/activities", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(activitiesToSave),
       });
-    } catch (error) {
-      console.error("Error saving file:", error);
+
+      if (res.ok) {
+        toast({
+          title: "Saved",
+          description: "Activities saved to server.",
+        });
+      } else {
+        throw new Error("Failed to save.");
+      }
+    } catch (err) {
+      console.error(err);
       toast({
-        title: "Error saving file",
-        description: "There was a problem saving your activities.",
+        title: "Error",
+        description: "Could not save activities.",
         variant: "destructive",
       });
     }
   };
 
   // Load activities from a JSON file
-  const loadActivitiesFromFile = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // const loadActivitiesFromFile = (
+  //   event: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   const file = event.target.files?.[0];
+  //   if (!file) return;
 
-    const reader = new FileReader();
+  //   const reader = new FileReader();
 
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const loadedActivities = JSON.parse(content);
+  //   reader.onload = (e) => {
+  //     try {
+  //       const content = e.target?.result as string;
+  //       const loadedActivities = JSON.parse(content);
 
-        // Convert ISO date strings back to Date objects
-        const processedActivities = loadedActivities.map(
-          (activity: Activity) => ({
-            ...activity,
-            date: new Date(activity.date),
-          })
-        );
+  //       // Convert ISO date strings back to Date objects
+  //       const processedActivities = loadedActivities.map(
+  //         (activity: Activity) => ({
+  //           ...activity,
+  //           date: new Date(activity.date),
+  //         })
+  //       );
 
-        setActivities(processedActivities);
+  //       setActivities(processedActivities);
 
-        toast({
-          title: "Calendar loaded",
-          description: `Loaded ${processedActivities.length} activities from file.`,
-        });
-      } catch (error) {
-        console.error("Error parsing JSON:", error);
-        toast({
-          title: "Error loading file",
-          description: "The selected file is not a valid calendar file.",
-          variant: "destructive",
-        });
-      }
-    };
+  //       toast({
+  //         title: "Calendar loaded",
+  //         description: `Loaded ${processedActivities.length} activities from file.`,
+  //       });
+  //     } catch (error) {
+  //       console.error("Error parsing JSON:", error);
+  //       toast({
+  //         title: "Error loading file",
+  //         description: "The selected file is not a valid calendar file.",
+  //         variant: "destructive",
+  //       });
+  //     }
+  //   };
 
-    reader.onerror = () => {
+  //   reader.onerror = () => {
+  //     toast({
+  //       title: "Error reading file",
+  //       description: "There was a problem reading the selected file.",
+  //       variant: "destructive",
+  //     });
+  //   };
+
+  //   reader.readAsText(file);
+
+  //   // Reset the file input
+  //   if (fileInputRef.current) {
+  //     fileInputRef.current.value = "";
+  //   }
+  // };
+
+  const loadActivitiesFromFile = async () => {
+    try {
+      const res = await fetch("/api/activities");
+      const data = await res.json();
+
+      const processedActivities = data.map((activity: Activity) => ({
+        ...activity,
+        date: new Date(activity.date),
+      }));
+
+      setActivities(processedActivities);
+
       toast({
-        title: "Error reading file",
-        description: "There was a problem reading the selected file.",
+        title: "Loaded",
+        description: `Loaded ${processedActivities.length} activities from server.`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Could not load activities.",
         variant: "destructive",
       });
-    };
-
-    reader.readAsText(file);
-
-    // Reset the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
     }
   };
 
